@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>高度育成高等學校 — 學生系統</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap');
+:root{--bg:#050810;--panel:#0a0f1e;--border:#1a2540;--accent:#00c8ff;--accent2:#0066ff;--gold:#d4a843;--red:#ff3355;--green:#00e87a;--text:#c8d8f0;--muted:#4a5a7a;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;position:relative;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(0,102,255,.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(0,200,255,.06) 0%,transparent 50%);pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.app{max-width:420px;margin:0 auto;position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
+.header{padding:16px 20px 12px;border-bottom:1px solid var(--border);background:rgba(10,15,30,.95);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.school-name{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:3px;color:var(--accent);text-transform:uppercase;opacity:.8;}
+.system-badge{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);}
+.student-bar{display:flex;align-items:center;gap:12px;}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2a4a,#0a1530);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;color:var(--accent);flex-shrink:0;}
+.student-info{flex:1;}
+.student-name{font-size:15px;font-weight:500;letter-spacing:1px;}
+.student-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:1px;}
+.points-display{text-align:right;}
+.points-value{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--gold);line-height:1;text-shadow:0 0 15px rgba(212,168,67,.4);}
+.points-label{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:rgba(5,8,16,.9);position:sticky;top:97px;z-index:99;overflow-x:auto;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex:0 0 auto;padding:10px 12px;text-align:center;font-size:10px;font-weight:500;letter-spacing:1px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;white-space:nowrap;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.screen{display:none;flex:1;padding:16px;}
+.screen.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.4;}
+.card-title{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.card-title::before{content:'';display:inline-block;width:3px;height:11px;background:var(--accent);border-radius:2px;}
+.class-rank-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.class-item{text-align:center;padding:10px 4px;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:all .2s;}
+.class-item.my-class{border-color:var(--accent);background:rgba(0,200,255,.05);}
+.class-letter{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;line-height:1;}
+.class-pts{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+.class-a .class-letter{color:var(--gold);}
+.class-b .class-letter{color:#a0b0d0;}
+.class-c .class-letter{color:var(--accent);}
+.class-d .class-letter{color:var(--red);}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{font-size:12px;color:var(--muted);font-weight:300;}
+.stat-value{font-family:'Share Tech Mono',monospace;font-size:13px;}
+.stat-bar-wrap{flex:1;margin:0 12px;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+.stat-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent2),var(--accent));}
+.alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:6px;margin-bottom:10px;font-size:12px;line-height:1.5;}
+.alert-warn{background:rgba(255,51,85,.08);border:1px solid rgba(255,51,85,.25);color:#ff8899;}
+.alert-info{background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.2);}
+.alert-gold{background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.25);color:var(--gold);}
+.alert-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.tx-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.tx-item:last-child{border-bottom:none;}
+.tx-desc{font-size:12px;}
+.tx-date{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;}
+.tx-amount{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;}
+.tx-amount.plus{color:var(--green);}
+.tx-amount.minus{color:var(--red);}
+.rank-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.rank-item:last-child{border-bottom:none;}
+.rank-num{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;width:28px;text-align:center;color:var(--muted);}
+.rank-num.r1{color:var(--gold);}.rank-num.r2{color:#a0b0d0;}.rank-num.r3{color:#b87333;}
+.rank-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.rank-name-col{flex:1;font-size:13px;}
+.rank-class{font-size:10px;color:var(--muted);margin-top:1px;}
+.rank-score{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--accent);}
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.shop-item{background:rgba(10,15,30,.8);border:1px solid var(--border);border-radius:8px;padding:14px 12px;cursor:pointer;transition:all .2s;text-align:center;}
+.shop-item:hover{border-color:var(--accent);transform:translateY(-1px);}
+.shop-icon{font-size:28px;margin-bottom:6px;}
+.shop-name{font-size:12px;margin-bottom:4px;}
+.shop-price{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;color:var(--gold);}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#0d1428;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:420px;}
+.modal-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;letter-spacing:2px;color:var(--accent);margin-bottom:16px;text-align:center;}
+.input-group{margin-bottom:14px;}
+.input-label{font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;text-transform:uppercase;display:block;}
+.input-field{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:14px;outline:none;}
+.input-field:focus{border-color:var(--accent);}
+.btn-row{display:flex;gap:10px;margin-top:16px;}
+.btn{flex:1;padding:12px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;border:none;transition:all .2s;}
+.btn-primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;}
+.btn-cancel{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);}
+.bottom-nav{display:flex;border-top:1px solid var(--border);background:rgba(5,8,16,.97);position:sticky;bottom:0;z-index:100;}
+.nav-item{flex:1;padding:12px 0 10px;text-align:center;cursor:pointer;}
+.nav-icon{font-size:18px;margin-bottom:2px;}
+.nav-label{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.nav-item.active .nav-label{color:var(--accent);}
+.pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,232,122,.5)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.scanline{position:fixed;top:0;left:0;right:0;height:2px;background:rgba(0,200,255,.15);animation:scan 6s linear infinite;pointer-events:none;z-index:999;}
+@keyframes scan{from{top:-2px}to{top:100vh}}
+.highlight-number{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:var(--accent);}
+.small-tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;letter-spacing:1px;}
+.tag-c{background:rgba(0,200,255,.15);color:var(--accent);}
+.tag-warn{background:rgba(255,51,85,.15);color:var(--red);}
+.tag-ok{background:rgba(0,232,122,.12);color:var(--green);}
+/* CHESS */
+#screen-chess{padding:12px;}
+.chess-phase{display:none;}
+.chess-phase.active{display:block;}
+.opp-grid{display:flex;flex-direction:column;gap:10px;}
+.opp-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--panel);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.opp-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.3;}
+.opp-card:hover{border-color:var(--accent);transform:translateX(3px);}
+.opp-avatar-c{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;font-family:'Rajdhani',sans-serif;flex-shrink:0;border:2px solid;}
+.opp-info{flex:1;}
+.opp-name{font-size:14px;font-weight:500;margin-bottom:2px;}
+.opp-cls{font-size:10px;color:var(--muted);margin-bottom:4px;}
+.opp-diff{display:flex;gap:3px;margin-bottom:2px;}
+.diff-dot{width:7px;height:7px;border-radius:50%;background:var(--border);}
+.diff-on{background:var(--accent)!important;}
+.diff-hard{background:var(--red)!important;}
+.opp-desc{font-size:10px;color:var(--muted);font-style:italic;}
+.color-select{display:flex;gap:12px;margin:16px 0;}
+.color-btn{flex:1;padding:18px 8px;border-radius:8px;border:2px solid var(--border);cursor:pointer;text-align:center;transition:all .2s;background:var(--panel);}
+.color-btn:hover{border-color:var(--accent);}
+.color-btn.chosen{border-color:var(--accent);background:rgba(0,200,255,.08);}
+.color-piece{font-size:36px;display:block;margin-bottom:6px;}
+.color-label{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;}
+.chess-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.chess-opp-info{display:flex;align-items:center;gap:8px;}
+.chess-opp-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;font-family:'Rajdhani',sans-serif;border:1.5px solid;}
+.chess-turn-badge{font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.3);color:var(--accent);}
+.chess-board{width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:2px solid var(--border);border-radius:4px;overflow:hidden;box-shadow:0 0 20px rgba(0,200,255,.1);}
+.cell{display:flex;align-items:center;justify-content:center;font-size:clamp(16px,4.5vw,26px);cursor:pointer;transition:background .1s;user-select:none;position:relative;}
+.cell.light{background:#0e1a2e;}
+.cell.dark{background:#071224;}
+.cell.selected{background:rgba(0,200,255,.4)!important;}
+.cell.possible{background:rgba(0,232,122,.25)!important;}
+.cell.possible::after{content:'';position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(0,232,122,.6);}
+.cell.last-move{background:rgba(212,168,67,.2)!important;}
+.cell.in-check{background:rgba(255,51,85,.4)!important;}
+.board-file-labels{display:flex;justify-content:space-around;padding:2px 0;}
+.bl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);text-align:center;width:12.5%;}
+.status-bar{margin-top:8px;padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:6px;font-size:11px;min-height:34px;display:flex;align-items:center;gap:6px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.thinking-txt{color:var(--accent);animation:blink .8s infinite;}
+.chess-btn-row{display:flex;gap:8px;margin-top:8px;}
+.chess-btn{flex:1;padding:9px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.chess-btn-danger{background:rgba(255,51,85,.15);border:1px solid rgba(255,51,85,.4);color:var(--red);}
+.chess-btn-neutral{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);}
+.captured-row{display:flex;flex-wrap:wrap;gap:1px;min-height:18px;}
+.board-wrap{position:relative;}
+.go-overlay{display:none;position:absolute;inset:0;background:rgba(5,8,16,.9);z-index:10;align-items:center;justify-content:center;flex-direction:column;border-radius:4px;}
+.go-overlay.show{display:flex;}
+.go-title{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;letter-spacing:3px;margin-bottom:6px;}
+.go-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="school-name">高度育成高等學校</div>
+      <div class="system-badge"><span class="pulse"></span> ONLINE</div>
+    </div>
+    <div class="student-bar">
+      <div class="avatar" id="header-avatar">S</div>
+      <div class="student-info">
+        <div class="student-name" id="header-name">SK6</div>
+        <div class="student-meta">1年 D班 · ID: 01-D-07</div>
+      </div>
+      <div class="points-display">
+        <div class="points-value" id="points-display">100,000</div>
+        <div class="points-label">S-Points</div>
+      </div>
+    </div>
+  </div>
+  <!-- API Key Bar -->
+  <div class="api-key-bar" id="api-key-bar">
+    <input class="api-key-input" id="api-key-input" type="password" placeholder="貼上 Gemini API Key (AIza...)" oninput="onApiKeyInput()">
+    <button class="api-key-save" onclick="saveApiKey()">儲存</button>
+    <span class="api-key-status" id="api-key-status">⚠ 未設定</span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('home')">總覽</div>
+    <div class="tab" onclick="switchTab('wallet')">錢包</div>
+    <div class="tab" onclick="switchTab('rank')">排名</div>
+    <div class="tab" onclick="switchTab('shop')">商店</div>
+    <div class="tab" onclick="switchTab('chess')">♟ 棋局</div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="card">
+      <div class="card-title">班級排名</div>
+      <div class="class-rank-grid">
+        <div class="class-item class-a"><div class="class-letter">A</div><div class="class-pts">1,198 pt</div></div>
+        <div class="class-item class-b"><div class="class-letter">B</div><div class="class-pts">1,021 pt</div></div>
+        <div class="class-item class-c my-class"><div class="class-letter">C</div><div class="class-pts">702 pt</div></div>
+        <div class="class-item class-d"><div class="class-letter">D</div><div class="class-pts">401 pt</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;">每月底依班級點數進行排名調整</div>
+    </div>
+    <div class="alert alert-warn"><span class="alert-icon">⚠</span><div>本月期末考試將於 <strong>14日後</strong> 舉行。班級排名將依據平均成績調整點數配給。</div></div>
+    <div class="card">
+      <div class="card-title">個人能力值</div>
+      <div class="stat-row"><div class="stat-label">學力</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:82%"></div></div><div class="stat-value">82</div></div>
+      <div class="stat-row"><div class="stat-label">體育</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:75%"></div></div><div class="stat-value">75</div></div>
+      <div class="stat-row"><div class="stat-label">社交</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:48%"></div></div><div class="stat-value">48</div></div>
+      <div class="stat-row"><div class="stat-label">規律</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:91%"></div></div><div class="stat-value">91</div></div>
+    </div>
+    <div class="alert alert-gold"><span class="alert-icon">★</span><div>本月出勤率 <strong>100%</strong>，無違規紀錄。特別行動點數 +50 pt 已發放。</div></div>
+  </div>
+
+  <!-- WALLET -->
+  <div class="screen" id="screen-wallet">
+    <div class="card" style="text-align:center;padding:20px;">
+      <div class="card-title" style="justify-content:center;">可用點數</div>
+      <div class="highlight-number" id="wallet-points">100,000</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">S-Points (學校配給貨幣)</div>
+      <div style="margin-top:14px;display:flex;gap:10px;justify-content:center;">
+        <span class="small-tag tag-c">D班</span>
+        <span class="small-tag tag-ok">本月 +11,000</span>
+        <span class="small-tag tag-warn">已用 -2,300</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <button class="btn btn-primary" onclick="openTransfer()" style="flex:1;padding:12px;border:none;cursor:pointer;">💸 點數轉移</button>
+      <button class="btn btn-cancel" style="flex:1;padding:12px;" onclick="alert('功能開發中')">📊 使用記錄</button>
+    </div>
+    <div class="card">
+      <div class="card-title">最近交易</div>
+      <div id="tx-list"></div>
+    </div>
+  </div>
+
+  <!-- RANK -->
+  <div class="screen" id="screen-rank">
+    <div class="card">
+      <div class="card-title">班內個人排名</div>
+      <div class="rank-item"><div class="rank-num r1">1</div><div class="rank-avatar" style="border-color:var(--gold);color:var(--gold)">堀</div><div class="rank-name-col"><div>堀北 鈴音</div><div class="rank-class">D班</div></div><div class="rank-score">94.2</div></div>
+      <div class="rank-item"><div class="rank-num r2">2</div><div class="rank-avatar" style="border-color:#a0b0d0;color:#a0b0d0">平</div><div class="rank-name-col"><div>平田 洋介</div><div class="rank-class">D班</div></div><div class="rank-score">88.7</div></div>
+      <div class="rank-item"><div class="rank-num r3">3</div><div class="rank-avatar" style="color:#b87333;border-color:#b87333">櫛</div><div class="rank-name-col"><div>櫛田 桔梗</div><div class="rank-class">D班</div></div><div class="rank-score">85.1</div></div>
+      <div class="rank-item"><div class="rank-num" style="color:var(--accent)">7</div><div class="rank-avatar" style="border-color:var(--accent);color:var(--accent)" id="rank-avatar">S</div><div class="rank-name-col"><div><span id="rank-name">SK6</span> <span style="font-size:9px;color:var(--accent)">▶ 你</span></div><div class="rank-class">D班</div></div><div class="rank-score">72.0</div></div>
+      <div class="rank-item"><div class="rank-num">8</div><div class="rank-avatar">須</div><div class="rank-name-col"><div>須藤 健</div><div class="rank-class">D班</div></div><div class="rank-score">51.3</div></div>
+    </div>
+    <div class="alert alert-info"><span class="alert-icon">ℹ</span><div>跨班級排名僅於期末考後公開。班級內排名即時更新。</div></div>
+    <div class="card">
+      <div class="card-title">本月學力評估</div>
+      <div class="stat-row"><div class="stat-label">數學</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:70%"></div></div><div class="stat-value">70</div></div>
+      <div class="stat-row"><div class="stat-label">國語</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:65%"></div></div><div class="stat-value">65</div></div>
+      <div class="stat-row"><div class="stat-label">英語</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:80%"></div></div><div class="stat-value">80</div></div>
+      <div class="stat-row"><div class="stat-label">理科</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:75%"></div></div><div class="stat-value">75</div></div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div class="screen" id="screen-shop">
+    <div class="alert alert-gold"><span class="alert-icon">💰</span><div>可用點數：<strong id="shop-pts">100,000 S-Points</strong></div></div>
+    <div class="card">
+      <div class="card-title">日常消費</div>
+      <div class="shop-grid">
+        <div class="shop-item" onclick="buy('自助餐廳餐券',800)"><div class="shop-icon">🍱</div><div class="shop-name">餐廳餐券</div><div class="shop-price">800 pt</div></div>
+        <div class="shop-item" onclick="buy('校內書店折扣券',500)"><div class="shop-icon">📚</div><div class="shop-name">書店折扣券</div><div class="shop-price">500 pt</div></div>
+        <div class="shop-item" onclick="buy('宿舍網路加速',300)"><div class="shop-icon">📶</div><div class="shop-name">網路加速</div><div class="shop-price">300 pt</div></div>
+        <div class="shop-item" onclick="buy('洗衣機使用次數',200)"><div class="shop-icon">🧺</div><div class="shop-name">洗衣機使用</div><div class="shop-price">200 pt</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">特殊服務</div>
+      <div class="shop-grid">
+        <div class="shop-item" onclick="buy('試卷解答權',5000)"><div class="shop-icon">📝</div><div class="shop-name">解答提示</div><div class="shop-price">5,000 pt</div></div>
+        <div class="shop-item" onclick="buy('補考申請資格',50000)"><div class="shop-icon">🎯</div><div class="shop-name">補考資格</div><div class="shop-price">50,000 pt</div></div>
+        <div class="shop-item" onclick="buy('個人情報查詢',15000)"><div class="shop-icon">🔍</div><div class="shop-name">情報查詢</div><div class="shop-price">15,000 pt</div></div>
+        <div class="shop-item" onclick="buy('開除學籍免責券',100000)"><div class="shop-icon">🛡</div><div class="shop-name">免責保護</div><div class="shop-price">100,000 pt</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHESS -->
+  <div class="screen" id="screen-chess">
+    <!-- Phase: select -->
+    <div class="chess-phase active" id="phase-select">
+      <div class="card-title" style="margin-bottom:14px;">選擇對手</div>
+      <div class="opp-grid" id="opp-grid"></div>
+    </div>
+    <!-- Phase: color -->
+    <div class="chess-phase" id="phase-color">
+      <div class="card" style="text-align:center;">
+        <div class="card-title" style="justify-content:center;">選擇陣營</div>
+        <div id="color-opp-display" style="margin-bottom:12px;font-size:13px;color:var(--muted);"></div>
+        <div class="color-select">
+          <div class="color-btn chosen" id="btn-white" onclick="chooseColor('white')">
+            <span class="color-piece">♔</span>
+            <div class="color-label" style="color:#fff;">白方</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">先手出擊</div>
+          </div>
+          <div class="color-btn" id="btn-black" onclick="chooseColor('black')">
+            <span class="color-piece">♚</span>
+            <div class="color-label" style="color:#888;">黑方</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">後發制人</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-primary" onclick="startGame(false)" style="flex:1;">⚔ 對局</button>
+          <button class="btn" onclick="startGame(true)" style="flex:1;background:rgba(212,168,67,.15);border:1px solid rgba(212,168,67,.4);color:var(--gold);">📖 教學模式</button>
+        </div>
+        <button class="btn btn-cancel" onclick="showPhase('select')" style="width:100%;margin-top:8px;">← 返回</button>
+      </div>
+    </div>
+    <!-- Phase: game -->
+    <div class="chess-phase" id="phase-game">
+      <div class="chess-header">
+        <div class="chess-opp-info">
+          <div class="chess-opp-av" id="g-opp-av"></div>
+          <div>
+            <div style="font-size:12px;font-weight:500;" id="g-opp-name"></div>
+            <div id="cap-by-opp" class="captured-row"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <div class="chess-turn-badge" id="turn-badge">你的回合</div>
+          <div id="tut-mode-badge" style="display:none;font-size:9px;padding:2px 7px;border-radius:3px;background:rgba(212,168,67,.15);border:1px solid rgba(212,168,67,.3);color:var(--gold);letter-spacing:1px;">📖 教學中</div>
+        </div>
+      </div>
+      <div class="board-wrap">
+        <div style="display:flex;gap:3px;align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;justify-content:space-around;" id="rank-labels"></div>
+          <div style="flex:1;">
+            <div class="chess-board" id="chess-board"></div>
+            <div class="board-file-labels" id="file-labels"></div>
+          </div>
+        </div>
+        <div class="go-overlay" id="go-overlay">
+          <div class="go-title" id="go-title"></div>
+          <div class="go-sub" id="go-sub"></div>
+          <button class="btn btn-primary" onclick="showPhase('select')" style="width:180px;">再來一局</button>
+        </div>
+      </div>
+      <div class="status-bar" id="status-bar">選擇棋子移動</div>
+      <div class="tutorial-box" id="tutorial-box">
+        <div class="tutorial-inner">
+          <div class="tutorial-opp-tag">
+            <div class="tutorial-opp-av" id="tut-opp-av"></div>
+            <div class="tutorial-opp-name" id="tut-opp-name"></div>
+          </div>
+          <div class="tutorial-text" id="tut-text">等待你的下一步...</div>
+          <button class="tutorial-hint-btn" id="tut-hint-btn" onclick="requestHint()">💡 請求提示</button>
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
+        <span>你吃的子：</span><div id="cap-by-me" class="captured-row" style="flex:1;"></div>
+      </div>
+      <div class="chess-btn-row">
+        <button class="chess-btn chess-btn-danger" onclick="resignGame()">🏳 投降</button>
+        <button class="chess-btn chess-btn-neutral" onclick="showPhase('select')">← 棋局大廳</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="switchNav('home')"><div class="nav-icon">🏠</div><div class="nav-label">總覽</div></div>
+    <div class="nav-item" id="nav-wallet" onclick="switchNav('wallet')"><div class="nav-icon">💳</div><div class="nav-label">錢包</div></div>
+    <div class="nav-item" id="nav-rank" onclick="switchNav('rank')"><div class="nav-icon">📊</div><div class="nav-label">排名</div></div>
+    <div class="nav-item" id="nav-shop" onclick="switchNav('shop')"><div class="nav-icon">🛒</div><div class="nav-label">商店</div></div>
+    <div class="nav-item" id="nav-chess" onclick="switchNav('chess')"><div class="nav-icon">♟</div><div class="nav-label">棋局</div></div>
+  </div>
+</div>
+
+<!-- Transfer Modal -->
+<div class="modal-overlay" id="modal-transfer">
+  <div class="modal">
+    <div class="modal-title">⟡ 點數轉移</div>
+    <div class="input-group"><label class="input-label">收款方學生 ID</label><input class="input-field" id="transfer-to" placeholder="例：01-D-03"></div>
+    <div class="input-group"><label class="input-label">轉移點數</label><input class="input-field" id="transfer-amount" type="number" placeholder="0" min="1"></div>
+    <div style="font-size:11px;color:var(--muted);">⚠ 轉移後無法撤回</div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeTransfer()">取消</button>
+      <button class="btn btn-primary" onclick="doTransfer()">確認轉移</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ STATE & STORAGE ═══
+const DEFAULT_STATE={name:'SK6',points:100000,transactions:[
+  {desc:'月度班級點數配給',date:'2025-04-01 09:00',amount:11000},
+  {desc:'自助餐廳消費',date:'2025-04-03 12:31',amount:-850},
+  {desc:'校內書店購物',date:'2025-04-05 16:10',amount:-1200},
+  {desc:'特別行動點數獎勵',date:'2025-04-05 23:59',amount:50},
+  {desc:'轉移給 堀北 鈴音',date:'2025-04-06 14:22',amount:-250}
+],chessRecord:{}};
+let state=JSON.parse(JSON.stringify(DEFAULT_STATE));
+function saveState(){try{localStorage.setItem('sk6-cote-v3',JSON.stringify(state));}catch(e){}}
+function loadState(){try{const r=localStorage.getItem('sk6-cote-v3');if(r)state=JSON.parse(r);}catch(e){}if(!state.chessRecord)state.chessRecord={};renderAll();}
+function renderAll(){
+  const{name,points,transactions}=state;
+  document.getElementById('header-avatar').textContent=name[0].toUpperCase();
+  document.getElementById('header-name').textContent=name;
+  document.getElementById('rank-avatar').textContent=name[0].toUpperCase();
+  document.getElementById('rank-name').textContent=name;
+  ['points-display','wallet-points'].forEach(id=>document.getElementById(id).textContent=points.toLocaleString());
+  document.getElementById('shop-pts').textContent=points.toLocaleString()+' S-Points';
+  const c=document.getElementById('tx-list');c.innerHTML='';
+  [...transactions].reverse().slice(0,8).forEach(tx=>{
+    const d=document.createElement('div');d.className='tx-item';
+    d.innerHTML=`<div><div class="tx-desc">${tx.desc}</div><div class="tx-date">${tx.date}</div></div><div class="tx-amount ${tx.amount>0?'plus':'minus'}">${tx.amount>0?'+':''}${tx.amount.toLocaleString()}</div>`;
+    c.appendChild(d);
+  });
+}
+function addTx(desc,amount){
+  const n=new Date(),p=x=>String(x).padStart(2,'0');
+  state.transactions.push({desc,date:`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())} ${p(n.getHours())}:${p(n.getMinutes())}`,amount});
+  state.points+=amount;saveState();renderAll();
+}
+
+// ═══ NAV ═══
+function switchTab(tab){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('screen-'+tab).classList.add('active');
+  ['home','wallet','rank','shop','chess'].forEach((t,i)=>{if(t===tab)document.querySelectorAll('.tab')[i].classList.add('active');});
+}
+function switchNav(tab){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('nav-'+tab).classList.add('active');switchTab(tab);}
+
+// ═══ WALLET ═══
+function openTransfer(){document.getElementById('modal-transfer').classList.add('open');}
+function closeTransfer(){document.getElementById('modal-transfer').classList.remove('open');document.getElementById('transfer-to').value='';document.getElementById('transfer-amount').value='';}
+function doTransfer(){
+  const amt=parseInt(document.getElementById('transfer-amount').value)||0,to=document.getElementById('transfer-to').value.trim();
+  if(!to){alert('請輸入收款方 ID');return;}if(amt<=0){alert('請輸入有效點數');return;}if(amt>state.points){alert('點數不足');return;}
+  addTx(`轉移給 ${to}`,-amt);closeTransfer();alert(`✓ 已轉移 ${amt.toLocaleString()} pt 給 ${to}`);
+}
+function buy(name,price){
+  if(price>state.points){alert('⚠ 點數不足');return;}
+  if(confirm(`確認購買「${name}」\n費用：${price.toLocaleString()} pt`)){addTx(`購買：${name}`,-price);alert(`✓ 購買成功`);}
+}
+
+// ═══ CHESS OPPONENTS ═══
+const OPPS=[
+  {id:'sudo',   name:'須藤 健',     cls:'D班',col:'#ff6644',em:'須',diff:1,desc:'衝動好鬥，愛用攻擊性開局'},
+  {id:'hirata', name:'平田 洋介',   cls:'D班',col:'#44aaff',em:'平',diff:2,desc:'穩健全面，攻守兼備'},
+  {id:'horikita',name:'堀北 鈴音',  cls:'D班',col:'#cc44ff',em:'堀',diff:3,desc:'理性精準，計算型棋手'},
+  {id:'ichinose',name:'一之瀨 帆波',cls:'B班',col:'#ffaa44',em:'一',diff:3,desc:'靈活多變，擅長陷阱'},
+  {id:'ryuuen', name:'龍園 翔',     cls:'C班',col:'#ff3355',em:'龍',diff:4,desc:'霸道侵略，心理壓制'},
+  {id:'sakayanagi',name:'坂柳 有栖',cls:'A班',col:'#d4a843',em:'坂',diff:5,desc:'【最高難度】天才棋手・幾近無解'},
+];
+
+function renderOpps(){
+  const g=document.getElementById('opp-grid');g.innerHTML='';
+  OPPS.forEach(o=>{
+    const rec=state.chessRecord[o.id]||{w:0,l:0,d:0};
+    const dots=Array.from({length:5},(_,i)=>{
+      let cls='diff-dot';if(i<o.diff)cls+=o.diff===5?' diff-hard':' diff-on';
+      return `<div class="${cls}"></div>`;
+    }).join('');
+    const d=document.createElement('div');d.className='opp-card';
+    d.innerHTML=`<div class="opp-avatar-c" style="background:${o.col}22;border-color:${o.col};color:${o.col}">${o.em}</div>
+    <div class="opp-info"><div class="opp-name">${o.name}</div><div class="opp-cls">${o.cls} · ${rec.w}勝 ${rec.l}負 ${rec.d}平</div><div class="opp-diff">${dots}</div><div class="opp-desc">${o.desc}</div></div>
+    <div style="font-size:20px;color:var(--muted)">›</div>`;
+    d.onclick=()=>selectOpp(o.id);
+    g.appendChild(d);
+  });
+}
+
+let selOpp=null,playerColor='white';
+function selectOpp(id){
+  selOpp=OPPS.find(o=>o.id===id);
+  document.getElementById('color-opp-display').innerHTML=`對手：<strong style="color:${selOpp.col}">${selOpp.name}</strong>`;
+  showPhase('color');
+}
+function chooseColor(c){
+  playerColor=c;
+  document.getElementById('btn-white').classList.toggle('chosen',c==='white');
+  document.getElementById('btn-black').classList.toggle('chosen',c==='black');
+}
+function showPhase(n){
+  document.querySelectorAll('.chess-phase').forEach(p=>p.classList.remove('active'));
+  document.getElementById('phase-'+n).classList.add('active');
+  if(n==='select')renderOpps();
+}
+
+// ═══ CHESS ENGINE ═══
+const PC={wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'};
+let board=[],turn='w',selCell=null,posMoves=[],lastMv=null;
+let capW=[],capB=[],gameOn=false,aiOn=false;
+let CR={wK:true,wQ:true,bK:true,bQ:true},EP=null;
+
+function initBoard(){
+  board=Array(8).fill(null).map(()=>Array(8).fill(null));
+  ['R','N','B','Q','K','B','N','R'].forEach((p,c)=>{board[0][c]='b'+p;board[7][c]='w'+p;});
+  for(let c=0;c<8;c++){board[1][c]='bP';board[6][c]='wP';}
+}
+
+function startGame(tutorial=false){
+  tutorialOn=tutorial;
+  if(!selOpp)return;
+  initBoard();turn='w';selCell=null;posMoves=[];lastMv=null;capW=[];capB=[];gameOn=true;aiOn=false;
+  CR={wK:true,wQ:true,bK:true,bQ:true};EP=null;
+  const o=selOpp;
+  const av=document.getElementById('g-opp-av');
+  av.textContent=o.em;av.style.cssText=`background:${o.col}22;border-color:${o.col};color:${o.col};width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;font-family:'Rajdhani',sans-serif;border:1.5px solid;`;
+  document.getElementById('g-opp-name').textContent=o.name;
+  document.getElementById('go-overlay').classList.remove('show');
+  // build rank labels
+  const rl=document.getElementById('rank-labels');rl.innerHTML='';
+  const flip=playerColor==='black';
+  const bh=document.getElementById('chess-board').offsetWidth||300;
+  rl.style.height=bh+'px';
+  for(let i=0;i<8;i++){
+    const sp=document.createElement('div');
+    sp.style.cssText='font-family:"Share Tech Mono",monospace;font-size:9px;color:var(--muted);width:10px;text-align:center;';
+    sp.textContent=flip?i+1:8-i;rl.appendChild(sp);
+  }
+  const fl=document.getElementById('file-labels');fl.innerHTML='';
+  'abcdefgh'.split('').forEach(f=>{const d=document.createElement('div');d.className='bl';d.textContent=flip?String.fromCharCode(104-f.charCodeAt(0)+97):f;fl.appendChild(d);});
+  showPhase('game');
+  renderBoard();
+  updateTutorialBox();
+  if(tutorialOn){
+    document.getElementById('tut-mode-badge').style.display='flex';
+    setTutText('對局開始！選擇你的第一步棋，我會在每步後給你分析。');
+  } else {
+    document.getElementById('tut-mode-badge').style.display='none';
+  }
+  if(playerColor==='black')setTimeout(()=>aiMove(),800);
+}
+
+function renderBoard(){
+  const el=document.getElementById('chess-board');el.innerHTML='';
+  const flip=playerColor==='black';
+  for(let ri=0;ri<8;ri++)for(let ci=0;ci<8;ci++){
+    const r=flip?7-ri:ri,c=flip?7-ci:ci;
+    const cell=document.createElement('div');
+    cell.className='cell '+((r+c)%2===0?'light':'dark');
+    if(selCell&&selCell.r===r&&selCell.c===c)cell.classList.add('selected');
+    if(posMoves.some(m=>m.r===r&&m.c===c))cell.classList.add('possible');
+    if(lastMv&&((lastMv.fr===r&&lastMv.fc===c)||(lastMv.tr===r&&lastMv.tc===c)))cell.classList.add('last-move');
+    const p=board[r][c];
+    if(p){cell.textContent=PC[p]||'';if(p==='wK'&&inCheck('w'))cell.classList.add('in-check');if(p==='bK'&&inCheck('b'))cell.classList.add('in-check');}
+    cell.onclick=()=>cellClick(r,c);
+    el.appendChild(cell);
+  }
+  document.getElementById('cap-by-opp').innerHTML=capB.map(p=>`<span style="font-size:13px">${PC[p]||''}</span>`).join('');
+  document.getElementById('cap-by-me').innerHTML=capW.map(p=>`<span style="font-size:13px">${PC[p]||''}</span>`).join('');
+  const myC=playerColor==='white'?'w':'b';
+  const myTurn=turn===myC;
+  const tb=document.getElementById('turn-badge');
+  tb.textContent=myTurn?'你的回合':(aiOn?`${selOpp.name} 思考中`:`${selOpp.name} 回合`);
+  tb.style.color=myTurn?'var(--green)':'var(--accent)';
+}
+
+function cellClick(r,c){
+  if(!gameOn||aiOn)return;
+  const myC=playerColor==='white'?'w':'b';
+  if(turn!==myC)return;
+  const p=board[r][c];
+
+  // 點同一格 → 取消選擇
+  if(selCell&&selCell.r===r&&selCell.c===c){
+    selCell=null;posMoves=[];setStatus('');renderBoard();return;
+  }
+
+  // 有選中棋子時
+  if(selCell){
+    const mv=posMoves.find(m=>m.r===r&&m.c===c);
+    if(mv){
+      // 合法移動目標
+      const moveMeta={fr:selCell.r,fc:selCell.c,r,c};
+      execMove(selCell.r,selCell.c,r,c,mv);
+      selCell=null;posMoves=[];
+      renderBoard();
+      tutorialComment(moveMeta);
+      if(gameOn)setTimeout(()=>aiMove(),600);
+      return;
+    }
+    // 點到另一個己方棋子 → 切換選擇
+    if(p&&p[0]===myC){
+      selCell={r,c};posMoves=legalMoves(r,c);
+      playSound('select');
+      setStatus(`選中 ${PC[p]}，可走 ${posMoves.length} 步`);
+      renderBoard();return;
+    }
+    // 點到非法格 → 取消選擇
+    selCell=null;posMoves=[];setStatus('');renderBoard();return;
+  }
+
+  // 沒有選中時：選己方棋子
+  if(p&&p[0]===myC){
+    selCell={r,c};posMoves=legalMoves(r,c);
+    playSound('select');
+    setStatus(`選中 ${PC[p]}，可走 ${posMoves.length} 步`);
+  } else {
+    selCell=null;posMoves=[];setStatus('');
+  }
+  renderBoard();
+}
+
+function execMove(fr,fc,tr,tc,meta={}){
+  const p=board[fr][fc],cap=board[tr][tc];
+  let soundType='move';
+  if(cap) soundType='capture';
+  if(meta.ep) soundType='capture';
+  if(meta.castle) soundType='castle';
+  if(cap)(p[0]==='w'?capW:capB).push(cap);
+  if(meta.ep&&EP){const dir=p[0]==='w'?1:-1,cap2=board[EP.r+dir][EP.c];if(cap2)(p[0]==='w'?capW:capB).push(cap2);board[EP.r+dir][EP.c]=null;}
+  board[tr][tc]=p;board[fr][fc]=null;
+  if(p==='wK'){if(tr===7&&tc===6){board[7][5]=board[7][7];board[7][7]=null;}if(tr===7&&tc===2){board[7][3]=board[7][0];board[7][0]=null;}CR.wK=false;CR.wQ=false;}
+  if(p==='bK'){if(tr===0&&tc===6){board[0][5]=board[0][7];board[0][7]=null;}if(tr===0&&tc===2){board[0][3]=board[0][0];board[0][0]=null;}CR.bK=false;CR.bQ=false;}
+  if(p==='wR'){if(fr===7&&fc===0)CR.wQ=false;if(fr===7&&fc===7)CR.wK=false;}
+  if(p==='bR'){if(fr===0&&fc===0)CR.bQ=false;if(fr===0&&fc===7)CR.bK=false;}
+  EP=null;
+  if(p==='wP'&&fr===6&&tr===4)EP={r:tr,c:tc};
+  if(p==='bP'&&fr===1&&tr===3)EP={r:tr,c:tc};
+  let promoted=false;
+  if(p==='wP'&&tr===0){board[tr][tc]='wQ';promoted=true;}
+  if(p==='bP'&&tr===7){board[tr][tc]='bQ';promoted=true;}
+  if(promoted) soundType='promote';
+  playSound(soundType);
+  lastMv={fr,fc,tr,tc};turn=turn==='w'?'b':'w';
+  checkOver();
+}
+
+function pseudoMoves(r,c,b){
+  const p=b[r][c];if(!p)return[];const col=p[0],type=p[1],moves=[];
+  const add=(nr,nc,m={})=>{if(nr>=0&&nr<8&&nc>=0&&nc<8)moves.push({r:nr,c:nc,...m});};
+  const slide=(dr,dc)=>{let nr=r+dr,nc=c+dc;while(nr>=0&&nr<8&&nc>=0&&nc<8){if(b[nr][nc]){if(b[nr][nc][0]!==col)moves.push({r:nr,c:nc});break;}moves.push({r:nr,c:nc});nr+=dr;nc+=dc;}};
+  if(type==='P'){
+    const dir=col==='w'?-1:1,sR=col==='w'?6:1;
+    const fwd=b[r+dir];
+    if(fwd&&!fwd[c]){add(r+dir,c);if(r===sR&&fwd&&!b[r+2*dir]?.[c])add(r+2*dir,c);}
+    [-1,1].forEach(dc=>{const nr=r+dir,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8){if(b[nr][nc]&&b[nr][nc][0]!==col)add(nr,nc);if(EP&&EP.r===nr&&EP.c===nc)add(nr,nc,{ep:true});}});
+  }
+  if(type==='N'){[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8&&b[nr]?.[nc]?.[0]!==col)add(nr,nc);});}
+  if(type==='B'){[[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>slide(dr,dc));}
+  if(type==='R'){[[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>slide(dr,dc));}
+  if(type==='Q'){[[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>slide(dr,dc));}
+  if(type==='K'){
+    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8&&b[nr]?.[nc]?.[0]!==col)add(nr,nc);});
+    if(col==='w'&&r===7&&c===4){
+      if(CR.wK&&!b[7][5]&&!b[7][6]&&!attacked(7,4,'w',b)&&!attacked(7,5,'w',b)&&!attacked(7,6,'w',b))add(7,6,{castle:true});
+      if(CR.wQ&&!b[7][3]&&!b[7][2]&&!b[7][1]&&!attacked(7,4,'w',b)&&!attacked(7,3,'w',b)&&!attacked(7,2,'w',b))add(7,2,{castle:true});
+    }
+    if(col==='b'&&r===0&&c===4){
+      if(CR.bK&&!b[0][5]&&!b[0][6]&&!attacked(0,4,'b',b)&&!attacked(0,5,'b',b)&&!attacked(0,6,'b',b))add(0,6,{castle:true});
+      if(CR.bQ&&!b[0][3]&&!b[0][2]&&!b[0][1]&&!attacked(0,4,'b',b)&&!attacked(0,3,'b',b)&&!attacked(0,2,'b',b))add(0,2,{castle:true});
+    }
+  }
+  return moves;
+}
+
+function attacked(r,c,defCol,b){
+  const atkCol=defCol==='w'?'b':'w';
+  for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++)if(b[rr][cc]&&b[rr][cc][0]===atkCol&&pseudoMoves(rr,cc,b).some(m=>m.r===r&&m.c===c))return true;
+  return false;
+}
+
+function inCheck(col,b=board){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]===col+'K')return attacked(r,c,col,b);
+  return false;
+}
+
+function legalMoves(r,c){
+  const p=board[r][c];if(!p)return[];const col=p[0];
+  return pseudoMoves(r,c,board).filter(mv=>{
+    const nb=board.map(row=>[...row]);nb[mv.r][mv.c]=p;nb[r][c]=null;
+    if(mv.ep&&EP)nb[EP.r+(col==='w'?1:-1)][EP.c]=null;
+    return!inCheck(col,nb);
+  });
+}
+
+function allLegal(col){
+  const res=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(board[r][c]&&board[r][c][0]===col)legalMoves(r,c).forEach(mv=>res.push({fr:r,fc:c,...mv}));
+  return res;
+}
+
+function checkOver(){
+  const moves=allLegal(turn);
+  if(moves.length===0){
+    const chk=inCheck(turn);const win=turn==='w'?'b':'w';
+    const myC=playerColor==='white'?'w':'b';
+    if(chk){
+      showOver(win==='w'?'白方勝利！':'黑方勝利！',win==='w'?'將死！白方獲勝':'將死！黑方獲勝');
+      setTimeout(()=>playSound(win===myC?'win':'lose'),200);
+      rec(win===myC?'win':'loss');
+    } else {
+      showOver('平局','和棋 — 無子可動');
+      rec('draw');
+    }
+    gameOn=false;
+  }else if(inCheck(turn)){
+    playSound('check');
+    setStatus(turn==='w'?'⚠ 白方被將軍！':'⚠ 黑方被將軍！');
+  } else setStatus('');
+}
+
+function rec(result){
+  if(!state.chessRecord[selOpp.id])state.chessRecord[selOpp.id]={w:0,l:0,d:0};
+  if(result==='win'){state.chessRecord[selOpp.id].w++;addTx(`西洋棋勝利獎勵（${selOpp.name}）`,500);}
+  else if(result==='loss'){state.chessRecord[selOpp.id].l++;saveState();}
+  else{state.chessRecord[selOpp.id].d++;saveState();}
+}
+
+function showOver(t,s){document.getElementById('go-title').textContent=t;document.getElementById('go-sub').textContent=s;document.getElementById('go-overlay').classList.add('show');}
+function resignGame(){if(!gameOn)return;if(!confirm('確定投降？'))return;gameOn=false;showOver('投降','你選擇了認負');setTimeout(()=>playSound('lose'),200);rec('loss');}
+function setStatus(msg,thinking=false){const el=document.getElementById('status-bar');el.innerHTML=thinking?`<span class="thinking-txt">⟳ ${msg}</span>`:msg||'選擇棋子移動';}
+
+// ═══ AI MOVE ═══
+// ═══ MINIMAX AI ENGINE ═══
+const PVAL={K:20000,Q:900,R:500,B:330,N:320,P:100};
+const PST={
+  P:[[0,0,0,0,0,0,0,0],[50,50,50,50,50,50,50,50],[10,10,20,30,30,20,10,10],[5,5,10,25,25,10,5,5],[0,0,0,20,20,0,0,0],[5,-5,-10,0,0,-10,-5,5],[5,10,10,-20,-20,10,10,5],[0,0,0,0,0,0,0,0]],
+  N:[[-50,-40,-30,-30,-30,-30,-40,-50],[-40,-20,0,0,0,0,-20,-40],[-30,0,10,15,15,10,0,-30],[-30,5,15,20,20,15,5,-30],[-30,0,15,20,20,15,0,-30],[-30,5,10,15,15,10,5,-30],[-40,-20,0,5,5,0,-20,-40],[-50,-40,-30,-30,-30,-30,-40,-50]],
+  B:[[-20,-10,-10,-10,-10,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,10,10,5,0,-10],[-10,5,5,10,10,5,5,-10],[-10,0,10,10,10,10,0,-10],[-10,10,10,10,10,10,10,-10],[-10,5,0,0,0,0,5,-10],[-20,-10,-10,-10,-10,-10,-10,-20]],
+  R:[[0,0,0,0,0,0,0,0],[5,10,10,10,10,10,10,5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[0,0,0,5,5,0,0,0]],
+  Q:[[-20,-10,-10,-5,-5,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,5,5,5,0,-10],[-5,0,5,5,5,5,0,-5],[0,0,5,5,5,5,0,-5],[-10,5,5,5,5,5,0,-10],[-10,0,5,0,0,0,0,-10],[-20,-10,-10,-5,-5,-10,-10,-20]],
+  K:[[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-20,-30,-30,-40,-40,-30,-30,-20],[-10,-20,-20,-20,-20,-20,-20,-10],[20,20,0,0,0,0,20,20],[20,30,10,0,0,10,30,20]]
+};
+function evalBoard(b){
+  let s=0;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=b[r][c];if(!p)continue;
+    const col=p[0],type=p[1],pv=PVAL[type]||0;
+    const pr=col==='w'?r:7-r;
+    const pst=(PST[type]&&PST[type][pr]&&PST[type][pr][c])||0;
+    s+=(col==='w'?1:-1)*(pv+pst);
+  }
+  return s;
+}
+function cloneBoard(b){return b.map(r=>[...r]);}
+function applyMove(b,fr,fc,tr,tc,meta,epT){
+  const nb=cloneBoard(b),p=nb[fr][fc];
+  if(meta&&meta.ep&&epT){const dir=p[0]==='w'?1:-1;nb[epT.r+dir][epT.c]=null;}
+  nb[tr][tc]=p;nb[fr][fc]=null;
+  if(p==='wK'){if(tr===7&&tc===6){nb[7][5]=nb[7][7];nb[7][7]=null;}if(tr===7&&tc===2){nb[7][3]=nb[7][0];nb[7][0]=null;}}
+  if(p==='bK'){if(tr===0&&tc===6){nb[0][5]=nb[0][7];nb[0][7]=null;}if(tr===0&&tc===2){nb[0][3]=nb[0][0];nb[0][0]=null;}}
+  if(p==='wP'&&tr===0)nb[tr][tc]='wQ';
+  if(p==='bP'&&tr===7)nb[tr][tc]='bQ';
+  return nb;
+}
+function inCheckB(col,b){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]===col+'K'){
+    const ak=col==='w'?'b':'w';
+    for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++){
+      const ap=b[rr][cc];if(!ap||ap[0]!==ak)continue;
+      const at=ap[1],dr=r-rr,dc=c-cc,ar=Math.abs(dr),ac=Math.abs(dc);
+      if(at==='K'&&ar<=1&&ac<=1)return true;
+      if(at==='N'&&((ar===2&&ac===1)||(ar===1&&ac===2)))return true;
+      if(at==='P'){const pd=ap[0]==='w'?-1:1;if(dr===pd&&ac===1)return true;}
+      if((at==='Q'||at==='R')&&(dr===0||dc===0)){
+        const sr=Math.sign(dr),sc=Math.sign(dc);let nr=rr+sr,nc=cc+sc;
+        while(nr!==r||nc!==c){if(b[nr][nc])break;nr+=sr;nc+=sc;}
+        if(nr===r&&nc===c)return true;
+      }
+      if((at==='Q'||at==='B')&&ar===ac&&ar>0){
+        const sr=Math.sign(dr),sc=Math.sign(dc);let nr=rr+sr,nc=cc+sc;
+        while(nr!==r||nc!==c){if(b[nr][nc])break;nr+=sr;nc+=sc;}
+        if(nr===r&&nc===c)return true;
+      }
+    }
+    return false;
+  }
+  return false;
+}
+function getPMB(r,c,b,epT){
+  const p=b[r][c];if(!p)return[];
+  const col=p[0],type=p[1],moves=[];
+  const add=(nr,nc,m={})=>{if(nr>=0&&nr<8&&nc>=0&&nc<8)moves.push({r:nr,c:nc,...m});};
+  const slide=(dr,dc)=>{let nr=r+dr,nc=c+dc;while(nr>=0&&nr<8&&nc>=0&&nc<8){if(b[nr][nc]){if(b[nr][nc][0]!==col)moves.push({r:nr,c:nc});break;}moves.push({r:nr,c:nc});nr+=dr;nc+=dc;}};
+  if(type==='P'){
+    const dir=col==='w'?-1:1,sR=col==='w'?6:1;
+    if(r+dir>=0&&r+dir<8&&!b[r+dir][c]){add(r+dir,c);if(r===sR&&!b[r+2*dir][c])add(r+2*dir,c);}
+    [-1,1].forEach(dc=>{const nr=r+dir,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8){if(b[nr][nc]&&b[nr][nc][0]!==col)add(nr,nc);if(epT&&epT.r===nr&&epT.c===nc)add(nr,nc,{ep:true});}});
+  }
+  if(type==='N'){[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8&&b[nr]?.[nc]?.[0]!==col)add(nr,nc);});}
+  if(type==='B'){[[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>slide(dr,dc));}
+  if(type==='R'){[[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>slide(dr,dc));}
+  if(type==='Q'){[[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>slide(dr,dc));}
+  if(type==='K'){[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8&&b[nr]?.[nc]?.[0]!==col)add(nr,nc);});}
+  return moves;
+}
+function getLMB(r,c,b,epT){
+  const p=b[r][c];if(!p)return[];const col=p[0];
+  return getPMB(r,c,b,epT).filter(mv=>{const nb=applyMove(b,r,c,mv.r,mv.c,mv,epT);return!inCheckB(col,nb);});
+}
+function allLegalB(col,b,epT){
+  const res=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]&&b[r][c][0]===col)getLMB(r,c,b,epT).forEach(mv=>res.push({fr:r,fc:c,...mv}));
+  return res;
+}
+function minimax(b,depth,alpha,beta,maximizing,epT){
+  const col=maximizing?'w':'b';
+  const moves=allLegalB(col,b,epT);
+  if(depth===0||moves.length===0){
+    if(moves.length===0)return inCheckB(col,b)?(maximizing?-30000:30000):0;
+    return evalBoard(b);
+  }
+  moves.sort((a,b2)=>(b[b2.r][b2.c]?1:0)-(b[a.r][a.c]?1:0));
+  if(maximizing){
+    let best=-Infinity;
+    for(const mv of moves){
+      const nb=applyMove(b,mv.fr,mv.fc,mv.r,mv.c,mv,epT);
+      let nep=null;const p=b[mv.fr][mv.fc];
+      if(p==='wP'&&mv.fr===6&&mv.r===4)nep={r:mv.r,c:mv.c};
+      if(p==='bP'&&mv.fr===1&&mv.r===3)nep={r:mv.r,c:mv.c};
+      best=Math.max(best,minimax(nb,depth-1,alpha,beta,false,nep));
+      alpha=Math.max(alpha,best);if(beta<=alpha)break;
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(const mv of moves){
+      const nb=applyMove(b,mv.fr,mv.fc,mv.r,mv.c,mv,epT);
+      let nep=null;const p=b[mv.fr][mv.fc];
+      if(p==='wP'&&mv.fr===6&&mv.r===4)nep={r:mv.r,c:mv.c};
+      if(p==='bP'&&mv.fr===1&&mv.r===3)nep={r:mv.r,c:mv.c};
+      best=Math.min(best,minimax(nb,depth-1,alpha,beta,true,nep));
+      beta=Math.min(beta,best);if(beta<=alpha)break;
+    }
+    return best;
+  }
+}
+function getDiffConfig(oppId){
+  const map={sudo:{depth:1,rand:0.7},hirata:{depth:2,rand:0.3},horikita:{depth:2,rand:0.1},ichinose:{depth:3,rand:0.15},ryuuen:{depth:3,rand:0.05},sakayanagi:{depth:4,rand:0}};
+  return map[oppId]||{depth:2,rand:0.2};
+}
+
+function aiMove(){
+  if(!gameOn)return;
+  const aiC=playerColor==='white'?'b':'w';
+  if(turn!==aiC)return;
+  aiOn=true;setStatus(`${selOpp.name} 思考中...`,true);renderBoard();
+  setTimeout(()=>{
+    const legal=allLegal(aiC);
+    if(!legal.length){aiOn=false;return;}
+    const cfg=getDiffConfig(selOpp.id);
+    let chosen=null;
+    if(Math.random()<cfg.rand){
+      chosen=legal[Math.floor(Math.random()*legal.length)];
+    } else {
+      const maximize=aiC==='w';
+      let bestScore=maximize?-Infinity:Infinity;
+      let bestMoves=[];
+      for(const mv of legal){
+        const nb=applyMove(board,mv.fr,mv.fc,mv.r,mv.c,mv,EP,null);
+        let newEP=null;
+        const p=board[mv.fr][mv.fc];
+        if(p==='wP'&&mv.fr===6&&mv.r===4)newEP={r:mv.r,c:mv.c};
+        if(p==='bP'&&mv.fr===1&&mv.r===3)newEP={r:mv.r,c:mv.c};
+        const score=minimax(nb,cfg.depth-1,-Infinity,Infinity,!maximize,newEP);
+        if(maximize?(score>bestScore):(score<bestScore)){bestScore=score;bestMoves=[mv];}
+        else if(score===bestScore)bestMoves.push(mv);
+      }
+      chosen=bestMoves[Math.floor(Math.random()*bestMoves.length)];
+    }
+    if(!chosen)chosen=legal[Math.floor(Math.random()*legal.length)];
+    execMove(chosen.fr,chosen.fc,chosen.r,chosen.c,chosen);
+    aiOn=false;setStatus('');renderBoard();
+  },300);
+}
+
+
+// ═══ SOUND ENGINE (Web Audio API) ═══
+let audioCtx = null;
+function getAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playSound(type){
+  try{
+    const ctx = getAudio();
+    if(ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    if(type === 'move'){
+      // Wooden piece tap - like Chess.com
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<data.length;i++){
+        const t = i/ctx.sampleRate;
+        data[i] = Math.exp(-t*40) * (Math.random()*2-1) * 0.6
+                + Math.exp(-t*80) * Math.sin(2*Math.PI*800*t) * 0.3;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.7, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.12);
+      src.connect(gain); gain.connect(ctx.destination);
+      src.start(now);
+
+    } else if(type === 'capture'){
+      // Heavier thud
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<data.length;i++){
+        const t = i/ctx.sampleRate;
+        data[i] = Math.exp(-t*25) * (Math.random()*2-1) * 0.8
+                + Math.exp(-t*50) * Math.sin(2*Math.PI*300*t) * 0.4;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(1.0, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.18);
+      src.connect(gain); gain.connect(ctx.destination);
+      src.start(now);
+
+    } else if(type === 'castle'){
+      // Two quick taps
+      playSound('move');
+      setTimeout(()=>playSound('move'), 120);
+
+    } else if(type === 'check'){
+      // Sharp warning tone
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now+0.15);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.2);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now+0.2);
+
+    } else if(type === 'promote'){
+      // Ascending chime
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = now + i*0.1;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.2, t+0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, t+0.25);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(t); osc.stop(t+0.25);
+      });
+
+    } else if(type === 'win'){
+      // Victory fanfare
+      [523,659,784,1047,784,1047,1319].forEach((freq,i)=>{
+        const osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.type='sine';osc.frequency.value=freq;
+        const t=now+i*0.12;
+        gain.gain.setValueAtTime(0,t);
+        gain.gain.linearRampToValueAtTime(0.25,t+0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(t);osc.stop(t+0.3);
+      });
+
+    } else if(type === 'lose'){
+      // Descending sad tone
+      [440,349,294,220].forEach((freq,i)=>{
+        const osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.type='sine';osc.frequency.value=freq;
+        const t=now+i*0.15;
+        gain.gain.setValueAtTime(0,t);
+        gain.gain.linearRampToValueAtTime(0.2,t+0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(t);osc.stop(t+0.35);
+      });
+
+    } else if(type === 'select'){
+      // Soft click for piece selection
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='sine';osc.frequency.value=1200;
+      gain.gain.setValueAtTime(0.08,now);
+      gain.gain.exponentialRampToValueAtTime(0.001,now+0.06);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.start(now);osc.stop(now+0.06);
+    }
+  } catch(e){}
+}
+
+
+
+// ═══ API KEY MANAGEMENT ═══
+function getApiKey(){
+  return localStorage.getItem('sk6-api-key')||'';
+}
+function saveApiKey(){
+  const val=document.getElementById('api-key-input').value.trim();
+  if(!val){alert('請輸入 API Key');return;}
+  if(!val.startsWith('AIza')){alert('格式不正確，Gemini Key 應以 AIza 開頭');return;}
+  localStorage.setItem('sk6-api-key',val);
+  updateApiKeyStatus();
+  document.getElementById('api-key-input').value='';
+  alert('✓ Gemini API Key 已儲存！');
+}
+function onApiKeyInput(){}
+function updateApiKeyStatus(){
+  const key=getApiKey();
+  const el=document.getElementById('api-key-status');
+  if(key){
+    el.textContent='✓ 已設定';
+    el.style.color='var(--green)';
+  } else {
+    el.textContent='⚠ 未設定';
+    el.style.color='var(--gold)';
+  }
+}
+
+// ═══ TUTORIAL MODE ═══
+let tutorialOn = false;
+
+function updateTutorialBox(){
+  const box = document.getElementById('tutorial-box');
+  if(!tutorialOn){ box.classList.remove('open'); return; }
+  box.classList.add('open');
+  // sync avatar
+  const av = document.getElementById('tut-opp-av');
+  av.textContent = selOpp.em;
+  av.style.cssText = `background:${selOpp.col}22;border-color:${selOpp.col};color:${selOpp.col};width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Rajdhani',sans-serif;border:1.5px solid;flex-shrink:0;`;
+  document.getElementById('tut-opp-name').textContent = selOpp.name + ' 的指導';
+  document.getElementById('tut-opp-name').style.color = selOpp.col;
+}
+
+// Called after player makes a move — opponent comments on it
+async function tutorialComment(playerMove){
+  if(!tutorialOn||!gameOn) return;
+  updateTutorialBox();
+  const btn = document.getElementById('tut-hint-btn');
+  btn.disabled = true;
+  setTutText('<span class="tutorial-thinking">⟳ 分析中...</span>');
+
+  const files='abcdefgh';
+  const moveStr = files[playerMove.fc]+(8-playerMove.fr)+files[playerMove.tc]+(8-playerMove.tr);
+  const boardStr = getBoardString();
+
+  const personas = {
+    sudo:     '你是須藤健，說話衝動直接，會罵人笨蛋，語氣充滿不耐，但偶爾給一點粗糙的建議。',
+    hirata:   '你是平田洋介，說話溫柔體貼，認真鼓勵對方，偶爾稱讚好棋。',
+    horikita: '你是堀北鈴音，說話冷淡嚴格，用命令口吻，不浪費多餘的話，但分析精準。',
+    ichinose: '你是一之瀨帆波，說話溫暖活潑，喜歡鼓勵，偶爾暗示有更好的選擇但不直說。',
+    ryuuen:   '你是龍園翔，說話霸氣輕蔑，嘲諷對手的每一步，但分析一針見血。',
+    sakayanagi:'你是坂柳有栖，說話優雅帶刺，用居高臨下的語氣，偶爾稱讚但語帶嘲諷，表現得像在玩弄對手。'
+  };
+
+  const persona = personas[selOpp.id] || personas.hirata;
+  const prompt = `${persona}
+
+你正在指導一個學生下西洋棋。學生剛才走了 ${moveStr}。
+當前棋盤（你是${playerColor==='white'?'黑':'白'}方）：
+${boardStr}
+
+請用角色的說話方式，用繁體中文，針對剛才那步棋給出簡短評價和下一步建議（2-3句話，不超過80字）。不要加任何前綴說明。`;
+
+  try{
+    const key=getApiKey();
+    if(!key){setTutText('⚠ 請先在上方設定 Gemini API Key');btn.disabled=false;return;}
+    const resp=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key='+key,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:150,temperature:0.8}})
+    });
+    const data=await resp.json();
+    const text=data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()||'';
+    if(!text&&data?.error){setTutText('⚠ API 錯誤：'+( data.error.message||'未知'));btn.disabled=false;return;}
+    setTutText(text||'（無回應）');
+  }catch(e){setTutText('（連線失敗，請確認 API Key 正確）');}
+  btn.disabled=false;
+}
+
+// Manual hint request
+async function requestHint(){
+  if(!tutorialOn||!gameOn||tutorialCooldown) return;
+  tutorialCooldown = true;
+  updateTutorialBox();
+  const btn = document.getElementById('tut-hint-btn');
+  btn.disabled = true;
+  setTutText('<span class="tutorial-thinking">⟳ 思考提示中...</span>');
+
+  const boardStr = getBoardString();
+  const myColor = playerColor==='white'?'白':'黑';
+  const personas = {
+    sudo:     '你是須藤健，說話衝動直接，給出很粗糙但實用的提示。',
+    hirata:   '你是平田洋介，溫柔體貼地提示最好的方向。',
+    horikita: '你是堀北鈴音，冷淡嚴格但精準地指出最佳方向。',
+    ichinose: '你是一之瀨帆波，溫暖地給出提示，但留一點懸念。',
+    ryuuen:   '你是龍園翔，輕蔑地指出你沒看到的最強一步。',
+    sakayanagi:'你是坂柳有栖，優雅帶刺地指出局面，點出一個關鍵方向但不完全說破。'
+  };
+  const persona = personas[selOpp.id]||personas.hirata;
+  const prompt = `${persona}
+
+學生執${myColor}方。當前棋盤：
+${boardStr}
+
+請用角色說話方式，用繁體中文，給出下一步的方向提示（不要直接說出具體著法坐標，給概念和方向即可，2-3句話，不超過80字）。`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:150,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    const data = await resp.json();
+    const text = (data.content||[]).map(x=>x.text||'').join('').trim();
+    setTutText(text||'...');
+  } catch(e){
+    setTutText('（提示失敗）');
+  }
+  btn.disabled = false;
+}
+
+function setTutText(html){
+  document.getElementById('tut-text').innerHTML = html;
+}
+
+function getBoardString(){
+  const PC2={wK:'K',wQ:'Q',wR:'R',wB:'B',wN:'N',wP:'P',bK:'k',bQ:'q',bR:'r',bB:'b',bN:'n',bP:'p'};
+  let s='  a b c d e f g h\n';
+  for(let r=0;r<8;r++){
+    s+=(8-r)+' ';
+    for(let c=0;c<8;c++) s+=(board[r][c]?PC2[board[r][c]]:'.')+(c<7?' ':'');
+    s+='\n';
+  }
+  return s;
+}
+
+// ═══ INIT ═══
+loadState();
+renderOpps();
+updateApiKeyStatus();
+</script>
+</body>
+</html>
